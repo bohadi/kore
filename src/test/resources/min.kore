@@ -1,0 +1,408 @@
+[]
+
+module IMP
+
+  sort Bool{} []
+  symbol true{}() : Bool{} []
+  symbol false{}() : Bool{} []
+  symbol and{}(Bool{}, Bool{}) : Bool{} []
+  symbol not{}(Bool{}) : Bool{} []
+
+  sort Int{} []
+  symbol zero{}() : Int{} []
+  symbol one{}() : Int{} []
+  symbol two{}() : Int{} []
+  symbol plus{}(Int{}, Int{}) : Int{} []
+  symbol div{}(Int{}, Int{}) : Int{} []
+  symbol leq{}(Int{}, Int{}) : Bool{} []
+
+  sort Id{} []
+  symbol id{}(Int{}) : Id{} []
+
+  sort List{S} []
+
+  symbol nil{S}() : List{S} []
+  symbol cons{S}(S, List{S}) : List{S} []
+  symbol append{S}(List{S}, List{S}) : List{S} []
+  symbol listItem{S}(S) : List{S} []
+
+  sort Set{S} []
+
+  symbol emptySet{S}() : Set{S} []
+  symbol union{S}(Set{S}, Set{S}) : Set{S} []
+  symbol inSet{S}(S, Set{S}) : Bool{} []
+
+  axiom{S,R}
+    \equals{Set{S},R}(
+      union{S}(S:Set{S}, emptySet{S}()),
+      S:Set{S}) []
+
+  sort Map{S1,S2} []
+
+  symbol bind{S1,S2}(S1,S2) : Map{S1,S2} []
+  symbol emp{S1,S2}() : Map{S1,S2} []
+  symbol merge{S1,S2}(Map{S1,S2}, Map{S1,S2}) : Map{S1,S2} []
+  symbol keys{S1,S2}(Map{S1,S2}) : Set{S1} []
+
+  sort Ctxt{S1,S2} []
+
+  symbol gamma0{S1,S2}(S1,S2) : Ctxt{S1,S2} []
+  symbol app{S1,S2}(Ctxt{S1,S2}, S1) : S2 []
+  alias gamma{S1,S2}(S1,S2) : Ctxt{S1,S2} []
+
+  axiom{S1,S2,R}
+    \equals{Ctxt{S1,S2},R}(
+      gamma{S1,S2}(
+        #variableToPattern{}(#X:#Variable{}),
+        #P:#Pattern{}),
+      #\exists{}(#`Ctxt{}(#S1:#Sort{},#S2:#Sort{}),
+        #X:#Variable{},
+        gamma0{S1,S2}(
+          #variableToPattern{}(#X:#Variable{}),
+          #P:#Pattern{}))) []
+
+ alias idctxt{S}() : Ctxt{S,S} []
+
+  axiom{S,R}
+    \equals{Ctxt{S,S},R}(
+      idctxt{S}(),
+      gamma{S,S}(X:S,X:S)) []
+
+  axiom{S,R}
+    \equals{S,R}(
+      T:S,
+      app{S,S}(idctxt{S,S}(), T:S)) []
+
+  sort AExp{} []
+  symbol intAsAExp{}(Int{}) : AExp{} []
+  symbol idAsAExp{}(Id{}) : AExp{} []
+
+  symbol divAExp{}(AExp{}, AExp{}) : AExp{} []
+
+  axiom{S,R,#R}
+    \implies{#R}(
+      \not{#R}(
+        #occursFree{#R}(
+          HOLE:S,
+          divAExp{}(
+            app{S,AExp{}}(
+              #C:#Pattern{},
+              T:S),
+            P:AExp{}))),
+      #provable{#R}(
+        \equals{AExp{},R}(
+          divAExp{}(
+            app{S,AExp{}}(
+              #C:#Pattern{},
+              T:S),
+            P:AExp{}),
+          app{S,AExp{}}(
+            gamma{S,AExp{}}(
+              HOLE:S,
+              divAExp{}(
+                app{S,AExp{}}(
+                  #C:#Pattern{},
+                  HOLE:S),
+                P:AExp{})),
+            T:S)))) [#strict{}("divAExp", one{}())]
+
+  //TODO divide-by-zero side condition
+
+  axiom{S,R,#R}
+    \implies{#R}(
+      \not{#R}(
+        #occursFree{#R}(
+          HOLE:S,
+          divAExp{}(
+            P:AExp{},
+            app{S,AExp{}}(
+              #C:#Pattern{},
+              T:S)))),
+      #provable{#R}(
+        \equals{AExp{},R}(
+          divAExp{}(
+            P:AExp{},
+            app{S,AExp{}}(
+              #C:#Pattern{},
+              T:S)),
+          app{S,AExp{}}(
+            gamma{S,AExp{}}(
+              HOLE:S,
+              divAExp{}(
+                P:AExp{},
+                app{S,AExp{}}(
+                  #C:#Pattern{},
+                  HOLE:S))),
+            T:S)))) [#strict{}("divAExp", two{}())]
+
+  symbol plusAExp{}(AExp{}, AExp{}) : AExp{} []
+
+  axiom{S,R,#R}
+    \implies{#R}(
+      \not{#R}(
+        #occursFree{#R}(
+          HOLE:S,
+          plusAExp{}(
+            app{S,AExp{}}(
+              #C:#Pattern{},
+              T:S),
+            P:AExp{}))),
+      #provable{#R}(
+        \equals{AExp{},R}(
+          plusAExp{}(
+            app{S,AExp{}}(
+              #C:#Pattern{},
+              T:S),
+            P:AExp{}),
+          app{S,AExp{}}(
+            gamma{S,AExp{}}(
+              HOLE:S,
+              plusAExp{}(
+                app{S,AExp{}}(
+                  #C:#Pattern{},
+                  HOLE:S),
+                P:AExp{})),
+            T:S)))) [#strict{}("plusAExp", one{}())]
+
+  axiom{S,R,#R}
+    \implies{#R}(
+      \not{#R}(
+        #occursFree{#R}(
+          HOLE:S,
+          plusAExp{}(
+            P:AExp{},
+            app{S,AExp{}}(
+              #C:#Pattern{},
+              T:S)))),
+      #provable{#R}(
+        \equals{AExp{},R}(
+          plusAExp{}(
+            P:AExp{},
+            app{S,AExp{}}(
+              #C:#Pattern{},
+              T:S)),
+          app{S,AExp{}}(
+            gamma{S,AExp{}}(
+              HOLE:S,
+              plusAExp{}(
+                P:AExp{},
+                app{S,AExp{}}(
+                  #C:#Pattern{},
+                  HOLE:S))),
+            T:S)))) [#strict{}("plusAExp", two{}())]
+
+  sort Block{} []
+
+  symbol emptyBlock{}() : Block{} []
+  symbol block{}(Stmt{}) : Block{} []
+
+  sort Stmt{} []
+
+  symbol blockAsStmt{}(Block{}) : Stmt{} []
+  symbol asgn{}(Id{}, AExp{}) : Stmt{} [#strict{}("asgn", two{}())]
+
+  axiom{S,R,#R}
+    \implies{#R}(
+      \not{#R}(
+        #occursFree{#R}(
+          HOLE:S,
+          asgn{}(
+            ID:Id{},
+            app{S,AExp{}}(
+              #C:#Pattern{},
+              T:S)))),
+      #provable{#R}(
+        \equals{Stmt{},R}(
+          asgn{}(
+            ID:Id{},
+            app{S,AExp{}}(
+              #C:#Pattern{},
+              T:S)),
+          app{S,Stmt{}}(
+            gamma{S,Stmt{}}(
+              HOLE:S,
+              asgn{}(
+                ID:Id{},
+                app{S,AExp{}}(
+                  #C:#Pattern{},
+                  HOLE:S))),
+            T:S)))) [#strict{}("asgn", two{}())]
+
+  symbol if{}(BExp{}, Block{}, Block{}) : Stmt{} [#strict{}("if", one{}())]
+
+  axiom{S,R,#R}
+    \implies{#R}(
+      \not{#R}(
+        #occursFree{#R}(
+          HOLE:S,
+          if{}(
+            app{S,BExp{}}(
+              #C:#Pattern{},
+              T:S),
+            B1:Block{},
+            B2:Block{}))),
+      #provable{#R}(
+        \equals{Stmt{},R}(
+          if{}(
+            app{S,BExp{}}(
+              #C:#Pattern{},
+              T:S),
+            B1:Block{},
+            B2:Block{}),
+          app{S,Stmt{}}(
+            gamma{S,Stmt{}}(
+              HOLE:S,
+              if{}(
+                app{S,BExp{}}(
+                  #C:#Pattern{},
+                  HOLE:S),
+                B1:Block{},
+                B2:Block{})),
+            T:S)))) [#strict{}("if", one{}())]
+
+  symbol while{}(BExp{}, Block{}) : Stmt{} []
+
+  symbol seq{}(Stmt{}, Stmt{}) : Stmt{} [#strict{}("seq", one{}())]
+
+  axiom{S,R,#R}
+    \implies{#R}(
+      \not{#R}(
+        #occursFree{#R}(
+          HOLE:S,
+          seq{}(
+            app{S,Stmt{}}(
+              #C:#Pattern{},
+              T:S),
+            P:Stmt{}))),
+      #provable{#R}(
+        \equals{Stmt{},R}(
+          seq{}(
+            app{S,Stmt{}}(
+              #C:#Pattern{},
+              T:S),
+            P:Stmt{}),
+          app{S,Stmt{}}(
+            gamma{S,Stmt{}}(
+              HOLE:S,
+              seq{}(
+                app{S,Stmt{}}(
+                  #C:#Pattern{},
+                  HOLE:S),
+                P:Stmt{})),
+            T:S)))) [#strict{}("seq", one{}())]
+
+
+  sort Pgm{} []
+  symbol pgm{}(List{Id{}}, Stmt{}) : Pgm{} [#strict{}("pgm", one{}()), #strict{}("pgm", two{}())]
+
+  sort KCell{} []
+  symbol kcell{}(Pgm{}) : KCell{} [#strict{}("kcell", one{}())]
+
+  sort StateCell{} []
+  symbol statecell{}(Map{Id{}, Int{}}) : StateCell{} [#strict{}("statecell", one{}())]
+
+  sort TopCell{} []
+  symbol topcell{}(KCell{}, StateCell{}) : TopCell{} [#strict{}("topcell", one{}()), #strict{}("topcell", two{}())]
+
+  symbol krun{}(Pgm{}) : TopCell{} []
+
+  axiom{R}
+    \equals{TopCell{},R}(
+      krun{}(P:Pgm{}),
+      topcell{}(
+        kcell{}(P:Pgm{}),
+        statecell{}(emp{Id{},Int{}}()))) []
+
+  symbol next{S}(S) : S []
+  alias rewrites{S}(S, S) : S []
+
+  axiom{S,RS}
+    \equals{S,RS}(
+      rewrites{S}(LEFT:S, RIGHT:S),
+      \implies{S}(
+        LEFT:S,
+        next{S}(RIGHT:S))) []
+
+  axiom{S,R}
+    rewrites{S,R}(
+      app{Map{Id{},Int{}},S}(
+        app{AExp{}, Ctxt{Map{Id{},Int{}}, S}}(
+          #C:#Pattern{},
+          idAsAExp{}(X:Id{})),
+        bind{Id{},Int{}}(
+          X:Id{},
+          I:Int{})),
+      app{Map{Id{},Int{}},S}(
+        app{AExp{}, Ctxt{Map{Id{},Int{}}, S}}(
+          #C:#Pattern{},
+          intAsAExp{}(I:Int{})),
+        bind{Id{},Int{}}(
+          X:Id{},
+          I:Int{}))) []
+
+  axiom{R}
+    rewrites{TopCell{},R}(
+      topcell{}(
+        kcell{}(and{}(true{}(), B:Bool{})),
+        statecell{}(S:StateCell{})
+      ),
+      topcell{}(
+        kcell{}(B:Bool{}),
+        statecell{}(emp{Id{}, Int{}}())
+      )
+    )
+  []
+  axiom{R}
+    rewrites{TopCell{},R}(
+      topcell{}(
+        kcell{}(and{}(false{}(), B:Bool{})),
+        statecell{}(S:StateCell{})
+      ),
+      topcell{}(
+        kcell{}(false{}()),
+        statecell{}(S:StateCell{})
+      )
+    )
+  []
+
+  axiom{R}
+    rewrites{TopCell{},R}(
+      topcell{}(
+        kcell{}( if{}(true{}(), S1:Block{}, S2:Block{}) ),
+        statecell{}(S:StateCell{})
+      ),
+      topcell{}(
+        kcell{}(S1:Block{}),
+        statecell{}(S:StateCell{})
+      )
+    )
+  []
+  axiom{R}
+    rewrites{TopCell{},R}(
+      topcell{}(
+        kcell{}( if{}(false{}(), S1:Block{}, S2:Block{}) ),
+        statecell{}(S:StateCell{})
+      ),
+      topcell{}(
+        kcell{}(S2:Block{}),
+        statecell{}(S:StateCell{})
+      )
+    )
+  []
+
+/*
+  axiom{R}
+    rewrites{TopCell{},R}(
+      topcell{}(
+        kcell{}( divAExp{}( #isAExp(A:AExp{}), #isAExp(B:AExp{})),
+        statecell{}(S:StateCell{})
+      ),
+      topcell{}(
+        kcell{}( {}( A `_/_` B) ),
+        statecell{}(S:StateCell{})
+      )
+    )
+  []
+*/
+
+endmodule []

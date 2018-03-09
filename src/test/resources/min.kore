@@ -106,8 +106,6 @@ module IMP
                 P:AExp{})),
             T:S)))) [#strict{}("divAExp", one{}())]
 
-  //TODO divide-by-zero side condition
-
   axiom{S,R,#R}
     \implies{#R}(
       \not{#R}(
@@ -340,6 +338,8 @@ module IMP
           X:Id{},
           I:Int{}))) []
 
+  // short-circuit and
+  // TODO context
   axiom{R}
     rewrites{TopCell{},R}(
       topcell{}(
@@ -365,6 +365,7 @@ module IMP
     )
   []
 
+  // if-then-else
   axiom{R}
     rewrites{TopCell{},R}(
       topcell{}(
@@ -390,7 +391,80 @@ module IMP
     )
   []
 
+  // while unrolls to if-while-empty
+  axiom{R}
+    rewrites{TopCell{},R}(
+      topcell{}(
+        kcell{}( while{}(C:Bool{}, S:Block{}) ),
+        statecell{}(S:StateCell{})
+      ),
+      topcell{}(
+        kcell{}(if{}(C:Bool{},
+                     seq{}( blockAsStmt{}(S:Block{}), while{}(C:Bool{},S:Block{}) ),
+                     emptyBlock{}() )),
+        statecell{}(S:StateCell{})
+      )
+    )
+  []
+
+  // var decl/init
+  axiom{R}
+    rewrites{TopCell{},R}(
+      topcell{}(
+        kcell{}( nil{Id{}}(), S:Stmt{} ),
+        statecell{}( emp{Id{},Int{}}() )
+      ),
+      topcell{}(
+        kcell{}( S:Stmt{} ),
+        statecell{}( emp{Id{},Int{}}() )
+      )
+    )
+  []
+  axiom{R}
+    rewrites{TopCell{},R}(
+      topcell{}(
+        kcell{}( cons{Id{}}(X:Id{}, Xs:List{Id{}}), S:Stmt{} ),
+        statecell{}( emp{Id{},Int{}}() )
+      ),
+      topcell{}(
+        kcell{}( Xs:List{Id{}}, S:Stmt{} ),
+        statecell{}( merge{Id{},Int{}}(bind{Id{},Int{}}(X:Id{}, zero{}()),
+                                        emp{Id{},Int{}}() ))
+      )
+    )
+  []
+  axiom{R}
+    rewrites{TopCell{},R}(
+      topcell{}(
+        kcell{}( nil{Id{}}(), S:Stmt{} ),
+        statecell{}( merge{Id{},Int{}}(M1:Map{Id{},Int{}}, M2:Map{Id{},Int{}}) )
+      ),
+      topcell{}(
+        kcell{}( S:Stmt{} ),
+        statecell{}( merge{Id{},Int{}}(M1:Map{Id{},Int{}}, M2:Map{Id{},Int{}}) )
+      )
+    )
+  []
+  axiom{R}
+    rewrites{TopCell{},R}(
+      topcell{}(
+        kcell{}( cons{Id{}}(X:Id{}, Xs:List{Id{}}), S:Stmt{} ),
+        statecell{}( merge{Id{},Int{}}(M1:Map{Id{},Int{}}, M2:Map{Id{},Int{}}) )
+      ),
+      topcell{}(
+        kcell{}( Xs:List{Id{}}, S:Stmt{} ),
+        statecell{}( merge{Id{},Int{}}(bind{Id{},Int{}}(X:Id{}, zero{}()),
+                                      merge{Id{},Int{}}(M1:Map{Id{},Int{}}, M2:Map{Id{},Int{}})) )
+      )
+    )
+  []
+
+//symbol bind{S1,S2}(S1,S2) : Map{S1,S2} []
+//symbol emp{S1,S2}() : Map{S1,S2} []
+//symbol merge{S1,S2}(Map{S1,S2}, Map{S1,S2}) : Map{S1,S2} []
+
 /*
+  // division by zero
   axiom{R}
     rewrites{TopCell{},R}(
       topcell{}(
